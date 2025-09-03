@@ -1,7 +1,5 @@
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.os.Message
-import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
