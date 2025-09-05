@@ -33,7 +33,10 @@ fun SplashScreen() {
         Image(
             painter = painterResource(id = R.drawable.foot),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .width(416.95001.dp)
+                .height(876.25.dp)
+                .padding(start = 145.00015.dp, top = 483.00024.dp, end = 0.01566.dp, bottom = 0.41856.dp),
             contentScale = ContentScale.Crop // 화면에 꽉 차게 잘라서 표시
         )
 

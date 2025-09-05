@@ -1,28 +1,45 @@
+import android.Manifest
 import android.annotation.SuppressLint
 import android.os.Message
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import com.example.mindwalk.ui.feature.login.WebAppInterface
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun MainScreen(url: String) {
     val context = LocalContext.current
+    var webView: WebView? = null
 
     // 팝업용 WebView를 관리할 상태 변수
     var popupWebView by remember { mutableStateOf<WebView?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ){
+        isGranted: Boolean ->
+        val  result = if (isGranted) "granted" else "denied"
+
+        webView?.post{
+            webView?.evaluateJavascript("javascript:requestLocationPermission($result)", null)
+        }
+    }
+
 
     // 메인 WebView
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = {
             WebView(it).apply {
+                webView = this
                 webViewClient = WebViewClient()
 
                 // 새 창을 열 수 있도록 설정 추가
@@ -60,6 +77,13 @@ fun MainScreen(url: String) {
                         popupWebView = null
                     }
                 }
+
+                val jsBridge = WebAppInterface(
+                    onRequestPermission = {
+                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                )
+                addJavascriptInterface(jsBridge, "AndroidApp")
                 loadUrl(url)
             }
         }

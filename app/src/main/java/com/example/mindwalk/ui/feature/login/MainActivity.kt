@@ -12,8 +12,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        var keyHash = Utility.getKeyHash(this)
-        Log.i("kakaoTest", "keyHash: $keyHash")
         setContent {
             MainScreen(url = "https://mindwalk-beryl.vercel.app/")
         }
