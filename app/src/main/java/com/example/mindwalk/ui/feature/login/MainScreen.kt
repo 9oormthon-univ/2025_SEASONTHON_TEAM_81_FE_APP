@@ -58,23 +58,8 @@ fun MainScreen(url: String) {
                     webView = this // webView 참조 저장
                     settings.apply {
                         javaScriptEnabled = true
-//
-    //                    // 2. DOM Storage 사용 허용
+                        // DOM Storage 사용 허용
                         domStorageEnabled = true
-    //
-                        // --- Viewport 및 레이아웃 문제 해결을 위한 핵심 설정 ---
-                        // 1. HTML의 viewport 메타 태그를 인식하도록 설정
-                        useWideViewPort = true
-                        // 2. 불러온 웹 콘텐츠의 너비가 WebView 너비에 맞게 조절됨
-                        loadWithOverviewMode = true
-
-                        // 3. 사용자가 기기 폰트 크기를 변경해도 웹뷰 내 텍스트 크기가 고정됨
-                        //    (레이아웃 깨짐 방지)
-                        textZoom = 100
-
-                        // 4. 앱처럼 보이게 하기 위해 확대/축소 기능 비활성화 (선택 사항)
-                        setSupportZoom(false)
-                        builtInZoomControls = false
                     }
 
                     webViewClient = object : WebViewClient() {
