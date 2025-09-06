@@ -1,76 +1,101 @@
+import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.os.Message
+import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import android.view.ViewGroup
-import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import java.net.URISyntaxException
+import android.webkit.GeolocationPermissions
+import android.webkit.WebChromeClient
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun MainScreen(url: String) {
     val context = LocalContext.current
+    var webView: WebView? = null
 
     // 팝업용 WebView를 관리할 상태 변수
-    var popupWebView by remember { mutableStateOf<WebView?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ){
+        isGranted: Boolean ->
+        val  result =
+            if (isGranted)
+                Log.d("Permission", "위치 권한이 허용되었습니다.")
+            else
+                Log.d("Permission", "위치 권한이 거절되었습니다.")
+    }
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
 
-    // 메인 WebView
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = {
-            WebView(it).apply {
-                webViewClient = WebViewClient()
+    Scaffold {
+        innerPadding ->
+        // 메인 WebView
+        AndroidView(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            factory = {
+                WebView(it).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
 
-                // 새 창을 열 수 있도록 설정 추가
-                settings.javaScriptEnabled = true
-                settings.javaScriptCanOpenWindowsAutomatically = true
-                settings.setSupportMultipleWindows(true)
+                    webView = this // webView 참조 저장
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        textZoom = 100
+                    }
 
-                // 새 창 열기 요청을 처리할 WebChromeClient 설정
-                webChromeClient = object : WebChromeClient() {
-                    override fun onCreateWindow(
-                        view: WebView?,
-                        isDialog: Boolean,
-                        isUserGesture: Boolean,
-                        resultMsg: Message?
-                    ): Boolean {
-                        // 새 WebView를 만들어서 팝업으로 띄움
-                        val newWebView = WebView(context).apply {
-                            settings.javaScriptEnabled = true
-                            webViewClient = WebViewClient() // 팝업 내에서 이동을 처리
+                    webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                            if (url != null && url.startsWith("intent://")) {
+                                try {
+                                    val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+                                    if (intent.resolveActivity(context.packageManager) != null) {
+                                        context.startActivity(intent)
+                                    } else {
+                                        val marketIntent = Intent(Intent.ACTION_VIEW)
+                                        marketIntent.data = Uri.parse("market://details?id=" + intent.getPackage())
+                                        context.startActivity(marketIntent)
+                                    }
+                                    return true
+                                } catch (e: URISyntaxException) {
+                                    Log.e("WebView_Intent", "잘못된 Intent URI 형식입니다.", e)
+                                }
+                            }
+                            return false
                         }
-
-                        // 팝업 WebView를 상태에 저장
-                        popupWebView = newWebView
-
-                        // 새로 만든 WebView를 시스템에 알려줌 (가장 중요)
-                        val transport = resultMsg?.obj as WebView.WebViewTransport
-                        transport.webView = newWebView
-                        resultMsg.sendToTarget()
-                        return true
                     }
-
-                    override fun onCloseWindow(window: WebView?) {
-                        super.onCloseWindow(window)
-                        // 팝업창 닫기 요청 시 팝업을 숨김
-                        popupWebView = null
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onGeolocationPermissionsShowPrompt(
+                            origin: String?,
+                            callback: GeolocationPermissions.Callback?
+                        ) {
+                            // 권한 요청에 대해 항상 '허용'으로 응답
+                            callback?.invoke(origin, true, false)
+                        }
                     }
+                    loadUrl(url)
                 }
-                loadUrl(url)
             }
-        }
-    )
-
-    // ✅ 3. 팝업 WebView를 보여줄 다이얼로그
-    if (popupWebView != null) {
-        Dialog(onDismissRequest = { popupWebView = null }) {
-            AndroidView(factory = { popupWebView!! })
-        }
+        )
     }
 }
