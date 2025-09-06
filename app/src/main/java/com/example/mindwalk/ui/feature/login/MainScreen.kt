@@ -27,7 +27,6 @@ fun MainScreen(url: String) {
     var webView: WebView? = null
 
     // 팝업용 WebView를 관리할 상태 변수
-    var popupWebView by remember { mutableStateOf<WebView?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ){
@@ -59,8 +58,10 @@ fun MainScreen(url: String) {
                     webView = this // webView 참조 저장
                     settings.apply {
                         javaScriptEnabled = true
-                        // DOM Storage 사용 허용
                         domStorageEnabled = true
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+                        textZoom = 100
                     }
 
                     webViewClient = object : WebViewClient() {
@@ -96,11 +97,5 @@ fun MainScreen(url: String) {
                 }
             }
         )
-    }
-
-    if (popupWebView != null) {
-        Dialog(onDismissRequest = { popupWebView = null }) {
-            AndroidView(factory = { popupWebView!! })
-        }
     }
 }
