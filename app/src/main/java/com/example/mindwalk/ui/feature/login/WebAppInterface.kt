@@ -8,5 +8,4 @@ class WebAppInterface(  private val onRequestPermission: () -> Unit) {
     fun requestLocationPermission() {
         onRequestPermission()
     }
-
 }

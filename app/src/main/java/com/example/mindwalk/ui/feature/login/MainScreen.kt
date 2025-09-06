@@ -2,11 +2,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.os.Message
 import android.util.Log
 import android.view.ViewGroup
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,8 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import com.example.mindwalk.ui.feature.login.WebAppInterface
 import java.net.URISyntaxException
+import android.webkit.GeolocationPermissions
+import android.webkit.WebChromeClient
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -34,11 +32,14 @@ fun MainScreen(url: String) {
         contract = ActivityResultContracts.RequestPermission()
     ){
         isGranted: Boolean ->
-        val  result = if (isGranted) "granted" else "denied"
-
-        webView?.post{
-            webView?.evaluateJavascript("javascript:requestLocationPermission($result)", null)
-        }
+        val  result =
+            if (isGranted)
+                Log.d("Permission", "위치 권한이 허용되었습니다.")
+            else
+                Log.d("Permission", "위치 권한이 거절되었습니다.")
+    }
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     Scaffold {
@@ -82,19 +83,20 @@ fun MainScreen(url: String) {
                             return false
                         }
                     }
-
-                    val jsBridge = WebAppInterface(
-                        onRequestPermission = {
-                            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onGeolocationPermissionsShowPrompt(
+                            origin: String?,
+                            callback: GeolocationPermissions.Callback?
+                        ) {
+                            // 권한 요청에 대해 항상 '허용'으로 응답
+                            callback?.invoke(origin, true, false)
                         }
-                    )
-                    addJavascriptInterface(jsBridge, "AndroidApp")
+                    }
                     loadUrl(url)
                 }
             }
         )
     }
-
 
     if (popupWebView != null) {
         Dialog(onDismissRequest = { popupWebView = null }) {

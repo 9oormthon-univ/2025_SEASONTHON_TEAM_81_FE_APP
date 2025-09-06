@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MainScreen(url = "https://mindwalk-beryl.vercel.app/onboarding")
+            MainScreen(url = "https://mindwalk-beryl.vercel.app/")
         }
     }
 }
